@@ -44,6 +44,7 @@ nss.publishClose();
 package com.gearsandcogs.utils
 {
 	import flash.events.Event;
+	import flash.events.NetStatusEvent;
 	import flash.events.TimerEvent;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
@@ -52,8 +53,12 @@ package com.gearsandcogs.utils
 	public class NetStreamSmart extends NetStream
 	{
 		public static const BUFFER_EMPTIED		:String = "BUFFER_EMPTIED";
-		public static const VERSION				:String = "NetStreamSmart v 0.0.1";
+		public static const VERSION				:String = "NetStreamSmart v 0.0.2";
 		
+		private var _is_paused					:Boolean;
+		private var _is_playing					:Boolean;
+		
+		private var _internal_client			:Object;
 		private var bufferMonitorTimer			:Timer;
 		
 		public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
@@ -72,6 +77,16 @@ package com.gearsandcogs.utils
 			close();
 			bufferMonitorTimer.stop();
 			dispatchEvent(new Event(BUFFER_EMPTIED));
+		}
+		
+		public function get is_paused():Boolean
+		{
+			return _is_paused;
+		}
+		
+		public function get is_playing():Boolean
+		{
+			return _is_playing;
 		}
 		
 		private function initializeListeners():void
@@ -94,7 +109,27 @@ package com.gearsandcogs.utils
 					finalizeClose();
 				}
 			});
+			
+			addEventListener(NetStatusEvent.NET_STATUS,handleNetstatu);
 		}
 		
+		protected function handleNetstatu(e:NetStatusEvent):void
+		{
+			trace("NetStreamSmart: "+e.info.code);
+			switch(e.info.code)
+			{
+				case "NetStream.Pause.Notify":
+					_is_playing = false;
+					_is_paused = true;
+					break;
+				case "NetStream.Play.Start":
+					_is_playing = true;
+					_is_paused = false;
+					break;
+				case "NetStream.Play.Stop":
+					_is_playing = false;
+					break;
+			}
+		}
 	}
 }
