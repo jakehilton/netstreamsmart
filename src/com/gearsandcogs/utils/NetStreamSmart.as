@@ -50,16 +50,30 @@ package com.gearsandcogs.utils
 	import flash.net.NetStream;
 	import flash.utils.Timer;
 	
-	public class NetStreamSmart extends NetStream
+	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const BUFFER_EMPTIED		:String = "BUFFER_EMPTIED";
-		public static const VERSION				:String = "NetStreamSmart v 0.0.2";
+		public static const VERSION								:String = "NetStreamSmart v 0.0.3";
 		
-		private var _is_paused					:Boolean;
-		private var _is_playing					:Boolean;
+		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
+		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
+		public static const NETSTREAM_PAUSE_NOTIFY				:String = "NetStream.Pause.Notify";
+		public static const NETSTREAM_PLAY_START				:String = "NetStream.Play.Start";
+		public static const NETSTREAM_PLAY_STOP					:String = "NetStream.Play.Stop";
+		public static const NETSTREAM_PLAY_STREAMNOTFOUND		:String = "NetStream.Play.StreamNotFound";
+		public static const NETSTREAM_PUBLISH_START				:String = "NetStream.Publish.Start";
+		public static const NETSTREAM_RECORD_START				:String = "NetStream.Record.Start";
+		public static const NETSTREAM_RECORD_STOP				:String = "NetStream.Record.Stop";
+
+		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
+		public static const ONMETADATA							:String = "NetStream.On.MetaData";
 		
-		private var _internal_client			:Object;
-		private var bufferMonitorTimer			:Timer;
+		public var _ext_client									:Object = {};
+		public var metaData										:Object;
+		
+		private var _is_paused									:Boolean;
+		private var _is_playing									:Boolean;
+		
+		private var _bufferMonitorTimer							:Timer;
 		
 		public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
 		{
@@ -67,37 +81,14 @@ package com.gearsandcogs.utils
 			super(connection, peerID);
 		}
 		
-		public function publishClose():void
-		{
-			bufferMonitorTimer.start();
-		}
-		
-		public function finalizeClose():void
-		{
-			close();
-			bufferMonitorTimer.stop();
-			dispatchEvent(new Event(BUFFER_EMPTIED));
-		}
-		
-		public function get is_paused():Boolean
-		{
-			return _is_paused;
-		}
-		
-		public function get is_playing():Boolean
-		{
-			return _is_playing;
-		}
-		
 		private function initializeListeners():void
 		{
-			bufferMonitorTimer = new Timer(100);
-			bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
+			_bufferMonitorTimer = new Timer(100);
+			_bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
 			{
 				//to completely freeup the netstream in the case of another instance trying
 				//to attach a camera or mic when it's in shutdown mode
-				attachAudio(null);
-				attachCamera(null);
+				disconnectSources();
 				try
 				{
 					if(info.audioBufferByteLength + info.videoBufferByteLength <= 0)
@@ -110,26 +101,94 @@ package com.gearsandcogs.utils
 				}
 			});
 			
-			addEventListener(NetStatusEvent.NET_STATUS,handleNetstatu);
+			addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
 		}
 		
-		protected function handleNetstatu(e:NetStatusEvent):void
+		private function disconnectSources():void
+		{
+			attachAudio(null);
+			attachCamera(null);
+		}
+		
+		/*
+		* Public methods
+		*/
+		
+		override public function set client(obj:Object):void
+		{
+			_ext_client = obj;
+			for(var i:String in obj)
+			{
+				if(!this[i])
+					this[i] = obj[i];
+			}
+			
+			super.client = this;
+		}
+		
+		public function publishClose():void
+		{
+			_bufferMonitorTimer.start();
+		}
+		
+		public function finalizeClose():void
+		{
+			disconnectSources();
+			close();
+			_bufferMonitorTimer.stop();
+			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
+		}
+		
+		public function get is_paused():Boolean
+		{
+			return _is_paused;
+		}
+		
+		public function get is_playing():Boolean
+		{
+			return _is_playing;
+		}
+		
+		protected function handleNetstatus(e:NetStatusEvent):void
 		{
 			trace("NetStreamSmart: "+e.info.code);
 			switch(e.info.code)
 			{
-				case "NetStream.Pause.Notify":
+				case NETSTREAM_PAUSE_NOTIFY:
 					_is_playing = false;
 					_is_paused = true;
 					break;
-				case "NetStream.Play.Start":
+				case NETSTREAM_PLAY_START:
 					_is_playing = true;
 					_is_paused = false;
 					break;
-				case "NetStream.Play.Stop":
+				case NETSTREAM_PLAY_STOP:
 					_is_playing = false;
 					break;
 			}
+		}
+		
+		/*
+		* Default methods to be supported for callbacks
+		*/
+		
+		public function onCuePoint(info:Object):void
+		{
+			if(_ext_client["onCuePoint"])
+				_ext_client["onCuePoint"](info);
+			
+			dispatchEvent(new ParamEvent(ONCUEPOINT,false,false,info));
+		}
+		
+		public function onMetaData(info:Object):void
+		{
+			//used to allow the app to continue to work if a client.onMetaData isn't specified
+			metaData = info;
+			
+			if(_ext_client["onMetaData"])
+				_ext_client["onMetaData"](info);
+			
+			dispatchEvent(new ParamEvent(ONMETADATA,false,false,info));
 		}
 	}
 }
