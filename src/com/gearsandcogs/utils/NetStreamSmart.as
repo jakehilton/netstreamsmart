@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.0.1
+VERSION: 0.0.3
 DATE: 1/25/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
@@ -37,7 +37,8 @@ var nc:NetConnection;
 var nss:NetStreamSmart = new NetStreamSmart(nc);
 
 to close:
-nss.publishClose();
+nss.publishClose(); //will let the buffers empty to the server naturally then close
+nss.finalizeClose(); //will immediately disconnect sources and close the netstream
 
 */
 
