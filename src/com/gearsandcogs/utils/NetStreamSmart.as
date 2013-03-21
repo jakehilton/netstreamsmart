@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.0.3
+VERSION: 0.0.5
 DATE: 1/25/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
@@ -38,7 +38,7 @@ var nss:NetStreamSmart = new NetStreamSmart(nc);
 
 to close:
 nss.publishClose(); //will let the buffers empty to the server naturally then close
-nss.finalizeClose(); //will immediately disconnect sources and close the netstream
+nss.close(); //will immediately disconnect sources and close the netstream
 
 */
 
@@ -53,7 +53,7 @@ package com.gearsandcogs.utils
 	
 	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const VERSION								:String = "NetStreamSmart v 0.0.3";
+		public static const VERSION								:String = "NetStreamSmart v 0.0.5";
 		
 		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
 		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
@@ -68,9 +68,12 @@ package com.gearsandcogs.utils
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
 		public static const ONMETADATA							:String = "NetStream.On.MetaData";
 		
+		public var debug										:Boolean;
+		
 		public var _ext_client									:Object = {};
 		public var metaData										:Object;
 		
+		private var _listener_initd								:Boolean;
 		private var _is_paused									:Boolean;
 		private var _is_playing									:Boolean;
 		
@@ -78,31 +81,42 @@ package com.gearsandcogs.utils
 		
 		public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
 		{
-			initializeListeners();
 			super(connection, peerID);
 		}
 		
-		private function initializeListeners():void
+		private function get bufferMonitorTimer():Timer
 		{
-			_bufferMonitorTimer = new Timer(100);
-			_bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
+			if(!_bufferMonitorTimer)
 			{
-				//to completely freeup the netstream in the case of another instance trying
-				//to attach a camera or mic when it's in shutdown mode
-				disconnectSources();
-				try
+				_bufferMonitorTimer = new Timer(100);
+				_bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
 				{
-					if(info.audioBufferByteLength + info.videoBufferByteLength <= 0)
+					//to completely freeup the netstream in the case of another instance trying
+					//to attach a camera or mic when it's in shutdown mode
+					disconnectSources();
+					try
 					{
-						finalizeClose();
+						if(info.audioBufferByteLength + info.videoBufferByteLength <= 0)
+						{
+							close();
+						}
+					}catch(e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
+					{
+						close();
 					}
-				}catch(e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
-				{
-					finalizeClose();
-				}
-			});
+				});
+			}
 			
-			addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+			return _bufferMonitorTimer;
+		}
+		
+		private function killTimer():void
+		{
+			if(_bufferMonitorTimer)
+			{
+				_bufferMonitorTimer.stop();
+				_bufferMonitorTimer = null;
+			}
 		}
 		
 		private function disconnectSources():void
@@ -114,6 +128,26 @@ package com.gearsandcogs.utils
 		/*
 		* Public methods
 		*/
+		
+		override public function close():void
+		{
+			killTimer();
+			if(hasEventListener(NetStatusEvent.NET_STATUS))
+				removeEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+			_listener_initd = false;
+			disconnectSources();
+			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
+			super.close();
+		}
+		
+		override public function play(...args):void
+		{
+			if(!_listener_initd)
+				addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+			_listener_initd = true;
+			
+			super.play.apply(null,args);
+		}
 		
 		override public function set client(obj:Object):void
 		{
@@ -129,15 +163,7 @@ package com.gearsandcogs.utils
 		
 		public function publishClose():void
 		{
-			_bufferMonitorTimer.start();
-		}
-		
-		public function finalizeClose():void
-		{
-			disconnectSources();
-			close();
-			_bufferMonitorTimer.stop();
-			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
+			bufferMonitorTimer.start();
 		}
 		
 		public function get is_paused():Boolean
@@ -152,7 +178,9 @@ package com.gearsandcogs.utils
 		
 		protected function handleNetstatus(e:NetStatusEvent):void
 		{
-			trace("NetStreamSmart: "+e.info.code);
+			if(debug)
+				trace("NetStreamSmart: "+e.info.code);
+			
 			switch(e.info.code)
 			{
 				case NETSTREAM_PAUSE_NOTIFY:
