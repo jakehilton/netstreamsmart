@@ -53,7 +53,7 @@ package com.gearsandcogs.utils
 	
 	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const VERSION								:String = "NetStreamSmart v 0.0.5";
+		public static const VERSION								:String = "NetStreamSmart v 0.0.6";
 		
 		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
 		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
@@ -68,7 +68,7 @@ package com.gearsandcogs.utils
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
 		public static const ONMETADATA							:String = "NetStream.On.MetaData";
 		
-		public var debug										:Boolean;
+		public var _debug										:Boolean;
 		
 		public var _ext_client									:Object = {};
 		public var metaData										:Object;
@@ -125,15 +125,21 @@ package com.gearsandcogs.utils
 			attachCamera(null);
 		}
 		
+		private function log(msg:String):void
+		{
+			trace("NetStreamSmart: "+msg);
+		}
+		
 		/*
 		* Public methods
 		*/
 		
 		override public function close():void
 		{
+			if(_debug)
+				log("close hit");
+			
 			killTimer();
-			if(hasEventListener(NetStatusEvent.NET_STATUS))
-				removeEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
 			_listener_initd = false;
 			disconnectSources();
 			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
@@ -142,6 +148,9 @@ package com.gearsandcogs.utils
 		
 		override public function play(...args):void
 		{
+			if(_debug)
+				log("play hit: "+args.join());
+			
 			if(!_listener_initd)
 				addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
 			_listener_initd = true;
@@ -161,8 +170,17 @@ package com.gearsandcogs.utils
 			super.client = this;
 		}
 		
+		public function set debug(isdebug:Boolean):void
+		{
+			_debug = isdebug;
+			log(VERSION);
+		}
+		
 		public function publishClose():void
 		{
+			if(_debug)
+				log("publishClose hit");
+			
 			bufferMonitorTimer.start();
 		}
 		
@@ -178,8 +196,8 @@ package com.gearsandcogs.utils
 		
 		protected function handleNetstatus(e:NetStatusEvent):void
 		{
-			if(debug)
-				trace("NetStreamSmart: "+e.info.code);
+			if(_debug)
+				log(e.info.code);
 			
 			switch(e.info.code)
 			{
