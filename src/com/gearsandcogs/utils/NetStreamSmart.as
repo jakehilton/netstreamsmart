@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.0.5
-DATE: 1/25/2013
+VERSION: 0.0.7
+DATE: 4/29/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -53,17 +53,21 @@ package com.gearsandcogs.utils
 	
 	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const VERSION								:String = "NetStreamSmart v 0.0.6";
+		public static const VERSION								:String = "NetStreamSmart v 0.0.7";
 		
 		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
 		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
+		
 		public static const NETSTREAM_PAUSE_NOTIFY				:String = "NetStream.Pause.Notify";
 		public static const NETSTREAM_PLAY_START				:String = "NetStream.Play.Start";
 		public static const NETSTREAM_PLAY_STOP					:String = "NetStream.Play.Stop";
 		public static const NETSTREAM_PLAY_STREAMNOTFOUND		:String = "NetStream.Play.StreamNotFound";
+		public static const NETSTREAM_PUBLISH_BADNAME			:String = "NetStream.Publish.BadName";
 		public static const NETSTREAM_PUBLISH_START				:String = "NetStream.Publish.Start";
+		
 		public static const NETSTREAM_RECORD_START				:String = "NetStream.Record.Start";
 		public static const NETSTREAM_RECORD_STOP				:String = "NetStream.Record.Stop";
+		public static const NETSTREAM_UNPUBLISH_SUCCESS			:String = "NetStream.Unpublish.Success";
 
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
 		public static const ONMETADATA							:String = "NetStream.On.MetaData";
@@ -76,11 +80,13 @@ package com.gearsandcogs.utils
 		private var _listener_initd								:Boolean;
 		private var _is_paused									:Boolean;
 		private var _is_playing									:Boolean;
+		private var _is_publishing								:Boolean;
 		
 		private var _bufferMonitorTimer							:Timer;
 		
 		public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
 		{
+			initListener();
 			super(connection, peerID);
 		}
 		
@@ -130,6 +136,13 @@ package com.gearsandcogs.utils
 			trace("NetStreamSmart: "+msg);
 		}
 		
+		private function initListener():void
+		{
+			if(!_listener_initd)
+				addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+			_listener_initd = true;
+		}
+		
 		/*
 		* Public methods
 		*/
@@ -150,10 +163,6 @@ package com.gearsandcogs.utils
 		{
 			if(_debug)
 				log("play hit: "+args.join());
-			
-			if(!_listener_initd)
-				addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
-			_listener_initd = true;
 			
 			super.play.apply(null,args);
 		}
@@ -194,6 +203,11 @@ package com.gearsandcogs.utils
 			return _is_playing;
 		}
 		
+		public function get is_publishing():Boolean
+		{
+			return _is_publishing;
+		}
+		
 		protected function handleNetstatus(e:NetStatusEvent):void
 		{
 			if(_debug)
@@ -211,6 +225,13 @@ package com.gearsandcogs.utils
 					break;
 				case NETSTREAM_PLAY_STOP:
 					_is_playing = false;
+					break;
+				case NETSTREAM_PUBLISH_BADNAME:
+				case NETSTREAM_UNPUBLISH_SUCCESS:
+					_is_publishing = false;
+					break;
+				case NETSTREAM_PUBLISH_START:
+					_is_publishing = true;
 					break;
 			}
 		}
