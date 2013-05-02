@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.0.8
+VERSION: 0.1.0
 DATE: 5/2/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
@@ -53,7 +53,7 @@ package com.gearsandcogs.utils
 	
 	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const VERSION								:String = "NetStreamSmart v 0.0.8";
+		public static const VERSION								:String = "NetStreamSmart v 0.1.0";
 		
 		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
 		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
@@ -72,11 +72,12 @@ package com.gearsandcogs.utils
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
 		public static const ONMETADATA							:String = "NetStream.On.MetaData";
 		
-		public var _debug										:Boolean;
+		public var closed										:Boolean;
 		
 		public var _ext_client									:Object = {};
 		public var metaData										:Object;
 		
+		private var _debug										:Boolean;
 		private var _listener_initd								:Boolean;
 		private var _is_paused									:Boolean;
 		private var _is_playing									:Boolean;
@@ -86,8 +87,18 @@ package com.gearsandcogs.utils
 		
 		public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
 		{
+			initVars();
 			initListener();
 			super(connection, peerID);
+		}
+		
+		private function initVars():void
+		{
+			closed = false;
+			_listener_initd = false;
+			_is_paused = false;
+			_is_playing = false;
+			_is_publishing = false;
 		}
 		
 		private function get bufferMonitorTimer():Timer
@@ -147,14 +158,21 @@ package com.gearsandcogs.utils
 		* Public methods
 		*/
 		
+		override public function attach(nc:NetConnection):void
+		{
+			closed = false;
+			super.attach(nc);
+		}
+		
 		override public function close():void
 		{
 			if(_debug)
 				log("close hit");
 			
 			killTimer();
-			_listener_initd = false;
+			initVars();
 			disconnectSources();
+			closed = true;
 			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
 			super.close();
 		}
