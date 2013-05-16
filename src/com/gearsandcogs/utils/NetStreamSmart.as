@@ -39,7 +39,7 @@ For example:
 var nc:NetConnection;
 var nss:NetStreamSmart = new NetStreamSmart(nc);
 
-to close:
+//to close:
 nss.publishClose(); //will let the buffers empty to the server naturally then close
 nss.close(); //will immediately disconnect sources and close the netstream
 
