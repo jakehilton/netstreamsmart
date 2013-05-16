@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.1.0
-DATE: 5/2/2013
+VERSION: 0.1.1
+DATE: 5/16/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -26,6 +26,9 @@ Some version of the flash player incorrectly removed buffer notifications which 
 It will automatically detach any camera or microphone source from the netstream, allow it to empty, then report when it has emptied and close the netstream.
 
 It has an event,BUFFER_EMPTIED, that fires to notify the user of a buffer empty success.
+
+Public properties that can be set:
+buffer_empty_wait_limit: a uint property defining the number of seconds that the class will wait before firing off the buffer empty event. The default is 0 which means it will wait indefinitely for the netstream buffer to empty
 
 USAGE:
 It's a simple use case really.. just use it as you would the built in NetStream class. 
@@ -53,7 +56,7 @@ package com.gearsandcogs.utils
 	
 	dynamic public class NetStreamSmart extends NetStream
 	{
-		public static const VERSION								:String = "NetStreamSmart v 0.1.0";
+		public static const VERSION								:String = "NetStreamSmart v 0.1.1";
 		
 		public static const NETSTREAM_BUFFER_EMPTY				:String = "NetStream.Buffer.Empty";
 		public static const NETSTREAM_BUFFER_FULL				:String = "NetStream.Buffer.Full";
@@ -72,16 +75,18 @@ package com.gearsandcogs.utils
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
 		public static const ONMETADATA							:String = "NetStream.On.MetaData";
 		
-		public var closed										:Boolean;
+		public var buffer_empty_wait_limit						:uint = 0;
 		
 		public var _ext_client									:Object = {};
-		public var metaData										:Object;
 		
+		private var _closed										:Boolean;
 		private var _debug										:Boolean;
 		private var _listener_initd								:Boolean;
 		private var _is_paused									:Boolean;
 		private var _is_playing									:Boolean;
 		private var _is_publishing								:Boolean;
+		
+		private var _metaData									:Object;
 		
 		private var _bufferMonitorTimer							:Timer;
 		
@@ -94,7 +99,7 @@ package com.gearsandcogs.utils
 		
 		private function initVars():void
 		{
-			closed = false;
+			_closed = false;
 			_listener_initd = false;
 			_is_paused = false;
 			_is_playing = false;
@@ -105,7 +110,11 @@ package com.gearsandcogs.utils
 		{
 			if(!_bufferMonitorTimer)
 			{
-				_bufferMonitorTimer = new Timer(100);
+				_bufferMonitorTimer = new Timer(100,buffer_empty_wait_limit*10);
+				_bufferMonitorTimer.addEventListener(TimerEvent.TIMER_COMPLETE,function(e:TimerEvent):void
+				{
+					close();
+				});
 				_bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
 				{
 					//to completely freeup the netstream in the case of another instance trying
@@ -160,7 +169,7 @@ package com.gearsandcogs.utils
 		
 		override public function attach(nc:NetConnection):void
 		{
-			closed = false;
+			_closed = false;
 			super.attach(nc);
 		}
 		
@@ -172,7 +181,7 @@ package com.gearsandcogs.utils
 			killTimer();
 			initVars();
 			disconnectSources();
-			closed = true;
+			_closed = true;
 			dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
 			super.close();
 		}
@@ -198,6 +207,11 @@ package com.gearsandcogs.utils
 		}
 		
 
+		public function get closed():Boolean
+		{
+			return _closed;
+		}
+		
 		public function get debug():Boolean
 		{
 			return _debug;
@@ -230,6 +244,11 @@ package com.gearsandcogs.utils
 		public function get is_publishing():Boolean
 		{
 			return _is_publishing;
+		}
+		
+		public function get metaData():Object
+		{
+			return _metaData;
 		}
 		
 		protected function handleNetstatus(e:NetStatusEvent):void
@@ -275,7 +294,7 @@ package com.gearsandcogs.utils
 		public function onMetaData(info:Object):void
 		{
 			//used to allow the app to continue to work if a client.onMetaData isn't specified
-			metaData = info;
+			_metaData = info;
 			
 			if(_ext_client["onMetaData"])
 				_ext_client["onMetaData"](info);
