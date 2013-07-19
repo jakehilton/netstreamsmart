@@ -70,6 +70,8 @@ package com.gearsandcogs.utils
 		
 		public static const NETSTREAM_RECORD_START				:String = "NetStream.Record.Start";
 		public static const NETSTREAM_RECORD_STOP				:String = "NetStream.Record.Stop";
+		public static const NETSTREAM_SEEK_NOTIFY				:String = "NetStream.Seek.Notify";
+		public static const NETSTREAM_UNPAUSE_NOTIFY			:String = "NetStream.Unpause.Notify";
 		public static const NETSTREAM_UNPUBLISH_SUCCESS			:String = "NetStream.Unpublish.Success";
 
 		public static const ONCUEPOINT							:String = "NetStream.On.CuePoint";
