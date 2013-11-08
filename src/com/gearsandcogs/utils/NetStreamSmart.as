@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.1.1
-DATE: 5/16/2013
+VERSION: 0.2.0
+DATE: 11/8/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -29,6 +29,7 @@ It has an event,BUFFER_EMPTIED, that fires to notify the user of a buffer empty 
 
 Public properties that can be set:
 buffer_empty_wait_limit: a uint property defining the number of seconds that the class will wait before firing off the buffer empty event. The default is 0 which means it will wait indefinitely for the netstream buffer to empty
+disable_time_update: by default a timer will be initialized to report back when the time value updates. The default is false and so the timer will start and report.
 
 USAGE:
 It's a simple use case really.. just use it as you would the built in NetStream class. 
@@ -56,7 +57,7 @@ package com.gearsandcogs.utils
     
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.1.1";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.0";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
@@ -71,15 +72,15 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_RECORD_START              :String = "NetStream.Record.Start";
         public static const NETSTREAM_RECORD_STOP               :String = "NetStream.Record.Stop";
         public static const NETSTREAM_SEEK_NOTIFY               :String = "NetStream.Seek.Notify";
+        public static const NETSTREAM_TIME_UPDATE               :String = "NetStream.Time.Update";
         public static const NETSTREAM_UNPAUSE_NOTIFY            :String = "NetStream.Unpause.Notify";
         public static const NETSTREAM_UNPUBLISH_SUCCESS         :String = "NetStream.Unpublish.Success";
 
         public static const ONCUEPOINT                          :String = "NetStream.On.CuePoint";
         public static const ONMETADATA                          :String = "NetStream.On.MetaData";
         
+        public var disable_time_update                          :Boolean;
         public var buffer_empty_wait_limit                      :uint = 0;
-        
-        public var _ext_client                                  :Object = {};
         
         private var _closed                                     :Boolean;
         private var _debug                                      :Boolean;
@@ -88,14 +89,18 @@ package com.gearsandcogs.utils
         private var _is_playing                                 :Boolean;
         private var _is_publishing                              :Boolean;
         
-        private var _metaData                                   :Object;
+        private var _time                                       :Number = 0;
+        
+        private var _ext_client                                 :Object = {};
+        private var _metaData                                   :Object = {};
         
         private var _bufferMonitorTimer                         :Timer;
+        private var _timeMonitorTimer                           :Timer;
         
         public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
         {
             initVars();
-            initListener();
+            initListeners();
             super(connection, peerID);
         }
         
@@ -138,12 +143,18 @@ package com.gearsandcogs.utils
             return _bufferMonitorTimer;
         }
         
-        private function killTimer():void
+        private function killTimers():void
         {
             if(_bufferMonitorTimer)
             {
                 _bufferMonitorTimer.stop();
                 _bufferMonitorTimer = null;
+            }
+            
+            if(_timeMonitorTimer)
+            {
+                _timeMonitorTimer.stop();
+                _timeMonitorTimer = null;
             }
         }
         
@@ -158,11 +169,27 @@ package com.gearsandcogs.utils
             trace("NetStreamSmart: "+msg);
         }
         
-        private function initListener():void
+        private function initListeners():void
         {
-            if(!_listener_initd)
-                addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+            if(_listener_initd)
+                return;
             _listener_initd = true;
+
+            addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
+            
+            if(disable_time_update)
+                return;
+            
+            _timeMonitorTimer = new Timer(100);
+            _timeMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
+            {
+                if(_time != time)
+                {
+                    _time = time;
+                    dispatchEvent(new ParamEvent(NETSTREAM_TIME_UPDATE,false,false,time));
+                }
+            });
+            _timeMonitorTimer.start();
         }
         
         /*
@@ -180,7 +207,7 @@ package com.gearsandcogs.utils
             if(_debug)
                 log("close hit");
             
-            killTimer();
+            killTimers();
             initVars();
             disconnectSources();
             _closed = true;
@@ -223,6 +250,11 @@ package com.gearsandcogs.utils
         {
             _debug = isdebug;
             log(VERSION);
+        }
+        
+        public function get duration():Number
+        {
+            return metaData.duration?metaData.duration:0;
         }
         
         public function publishClose():void
