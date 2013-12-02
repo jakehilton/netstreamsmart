@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.0
-DATE: 11/8/2013
+VERSION: 0.2.1
+DATE: 12/2/2013
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -30,6 +30,9 @@ It has an event,BUFFER_EMPTIED, that fires to notify the user of a buffer empty 
 Public properties that can be set:
 buffer_empty_wait_limit: a uint property defining the number of seconds that the class will wait before firing off the buffer empty event. The default is 0 which means it will wait indefinitely for the netstream buffer to empty
 disable_time_update: by default a timer will be initialized to report back when the time value updates. The default is false and so the timer will start and report.
+enable_info_update: enable a timer will be initialized to report back netstream.info at a set interval. The default is false and so the timer will not start and report.
+ns_info_rate: the rate at which the info updates are reported out. The default is 2000 (2 seconds)
+format_netstream_info: it will format the netstream info into a JSON compatible dataset instead of the default netstream info object which doesn't support iterations
 
 USAGE:
 It's a simple use case really.. just use it as you would the built in NetStream class. 
@@ -53,15 +56,19 @@ package com.gearsandcogs.utils
     import flash.events.TimerEvent;
     import flash.net.NetConnection;
     import flash.net.NetStream;
+    import flash.net.NetStreamInfo;
     import flash.utils.Timer;
-    
+    import flash.utils.describeType;
+
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.0";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.1";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
-        
+
+        public static const NETSTREAM_INFO_UPDATE               :String = "NetStream.Info.Update";
+
         public static const NETSTREAM_PAUSE_NOTIFY              :String = "NetStream.Pause.Notify";
         public static const NETSTREAM_PLAY_START                :String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP                 :String = "NetStream.Play.Stop";
@@ -79,24 +86,30 @@ package com.gearsandcogs.utils
         public static const ONCUEPOINT                          :String = "NetStream.On.CuePoint";
         public static const ONMETADATA                          :String = "NetStream.On.MetaData";
         
-        public var disable_time_update                          :Boolean;
+        public var format_netstream_info                        :Boolean = true;
+
         public var buffer_empty_wait_limit                      :uint = 0;
-        
+
         private var _closed                                     :Boolean;
         private var _debug                                      :Boolean;
-        private var _listener_initd                             :Boolean;
+        private var _disable_time_update                        :Boolean;
+        private var _enable_info_update                         :Boolean;
         private var _is_paused                                  :Boolean;
         private var _is_playing                                 :Boolean;
         private var _is_publishing                              :Boolean;
-        
+        private var _listener_initd                             :Boolean;
+
         private var _time                                       :Number = 0;
-        
+
         private var _ext_client                                 :Object = {};
         private var _metaData                                   :Object = {};
-        
+
         private var _bufferMonitorTimer                         :Timer;
         private var _timeMonitorTimer                           :Timer;
-        
+        private var _nsInfoTimer                                :Timer;
+
+        private var _ns_info_rate                                :uint = 2000;
+
         public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
         {
             initVars();
@@ -143,6 +156,12 @@ package com.gearsandcogs.utils
             return _bufferMonitorTimer;
         }
         
+        private function disconnectSources():void
+        {
+            attachAudio(null);
+            attachCamera(null);
+        }
+
         private function killTimers():void
         {
             if(_bufferMonitorTimer)
@@ -150,25 +169,11 @@ package com.gearsandcogs.utils
                 _bufferMonitorTimer.stop();
                 _bufferMonitorTimer = null;
             }
-            
-            if(_timeMonitorTimer)
-            {
-                _timeMonitorTimer.stop();
-                _timeMonitorTimer = null;
-            }
+
+            killInfoUpdater();
+            killTimeMonitor();
         }
-        
-        private function disconnectSources():void
-        {
-            attachAudio(null);
-            attachCamera(null);
-        }
-        
-        private function log(msg:String):void
-        {
-            trace("NetStreamSmart: "+msg);
-        }
-        
+
         private function initListeners():void
         {
             if(_listener_initd)
@@ -176,10 +181,28 @@ package com.gearsandcogs.utils
             _listener_initd = true;
 
             addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
-            
-            if(disable_time_update)
+
+            setupTimeMonitor();
+        }
+
+        private function setupInfoUpdater():void
+        {
+            if(_nsInfoTimer)
                 return;
-            
+
+            _nsInfoTimer = new Timer(_ns_info_rate);
+            _nsInfoTimer.addEventListener(TimerEvent.TIMER, function(e:TimerEvent):void
+            {
+                dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE,false,false,format_netstream_info?formatNetStreamInfo(info):info));
+            });
+            _nsInfoTimer.start();
+        }
+
+        private function setupTimeMonitor():void
+        {
+            if(_timeMonitorTimer)
+                return;
+
             _timeMonitorTimer = new Timer(100);
             _timeMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
             {
@@ -191,11 +214,91 @@ package com.gearsandcogs.utils
             });
             _timeMonitorTimer.start();
         }
-        
+
+        private function killInfoUpdater():void
+        {
+            if(_nsInfoTimer)
+            {
+                _nsInfoTimer.stop();
+                _nsInfoTimer = null;
+            }
+        }
+
+        private function killTimeMonitor():void
+        {
+            if(_timeMonitorTimer)
+            {
+                _timeMonitorTimer.stop();
+                _timeMonitorTimer = null;
+            }
+        }
+
+        private static function formatNetStreamInfo(ns_info:NetStreamInfo):Object
+        {
+            var ns_info_new:Object = new Object();
+            var described_item:XML = describeType(ns_info);
+            var accessors:XMLList = described_item..accessor;
+            for each( var item:XML in accessors)
+                ns_info_new[item.@name.toString()] = ns_info[item.@name.toString()];
+
+            return ns_info_new;
+        }
+
+        private static function log(msg:String):void
+        {
+            trace("NetStreamSmart: "+msg);
+        }
+
         /*
         * Public methods
         */
-        
+
+        public function get enable_info_update():Boolean
+        {
+            return _enable_info_update;
+        }
+
+        public function set enable_info_update(b:Boolean):void
+        {
+            _enable_info_update = b;
+
+            if(b)
+                setupInfoUpdater();
+            else
+                killInfoUpdater();
+        }
+
+        public function get disable_time_update():Boolean
+        {
+            return _disable_time_update;
+        }
+
+        public function set disable_time_update(b:Boolean):void
+        {
+            _disable_time_update = b;
+
+            if(b)
+                setupTimeMonitor();
+            else
+                killTimeMonitor();
+        }
+
+        public function get ns_info_rate():uint
+        {
+            return _ns_info_rate;
+        }
+
+        public function set ns_info_rate(rate:uint):void
+        {
+            _ns_info_rate = rate;
+
+            if(enable_info_update)
+            {
+                killInfoUpdater();
+                setupInfoUpdater();
+            }
+        }
+
         override public function attach(nc:NetConnection):void
         {
             _closed = false;
@@ -227,15 +330,12 @@ package com.gearsandcogs.utils
         {
             _ext_client = obj;
             for(var i:String in obj)
-            {
-                if(!this[i])
+                if(!hasOwnProperty(i))
                     this[i] = obj[i];
-            }
-            
+
             super.client = this;
         }
         
-
         public function get closed():Boolean
         {
             return _closed;

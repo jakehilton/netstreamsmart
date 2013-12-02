@@ -27,7 +27,7 @@
 			var s_pass:String=(s<10?separator+"0":separator)+s;
 			var m_pass:String=m==0?h>0?"00":"00":(m<10 ? h>0?"0":"0" : "")+m;
 			var h_pass:String=h==0?d>0?"00":"":(h<10 ? d>0?"0":"0" : "")+h+separator;
-			var d_pass:String=d==0 ? "" : d+separator
+			var d_pass:String=d==0 ? "" : d+separator;
 	
 			return d_pass+h_pass+m_pass+s_pass;
 		}
@@ -37,12 +37,12 @@
 			var time_split:Array = timeIn.split(":");
 			var secondsOut:Number = 0;
 			if(time_split.length==4) 
-                secondsOut = Number(time_split[0])*86400 + Number(time_split[1])*3600 + Number(time_split[2])*60
+                secondsOut = Number(time_split[0])*86400 + Number(time_split[1])*3600 + Number(time_split[2])*60;
 			if(time_split.length==3) 
-                secondsOut = Number(time_split[0])*3600 + Number(time_split[1])*60
+                secondsOut = Number(time_split[0])*3600 + Number(time_split[1])*60;
 			if(time_split.length==2) 
-                secondsOut = Number(time_split[0])*60
-			secondsOut += Number(time_split[time_split.length-1])
+                secondsOut = Number(time_split[0])*60;
+			secondsOut += Number(time_split[time_split.length-1]);
 			return secondsOut;
 		}
 	}
