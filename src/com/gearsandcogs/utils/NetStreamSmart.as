@@ -1,6 +1,6 @@
 /*
 <AUTHOR: Jake Hilton, jake@gearsandcogs.com
-Copyright (C) 2013, Gears and Cogs.
+Copyright (C) 2014, Gears and Cogs.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.1
-DATE: 12/2/2013
+VERSION: 0.2.2
+DATE: 01/14/2014
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -70,9 +70,11 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_INFO_UPDATE               :String = "NetStream.Info.Update";
 
         public static const NETSTREAM_PAUSE_NOTIFY              :String = "NetStream.Pause.Notify";
+        public static const NETSTREAM_PLAY_PUBLISHNOTIFY        :String = "NetStream.Play.PublishNotify";
         public static const NETSTREAM_PLAY_START                :String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP                 :String = "NetStream.Play.Stop";
         public static const NETSTREAM_PLAY_STREAMNOTFOUND       :String = "NetStream.Play.StreamNotFound";
+        public static const NETSTREAM_PLAY_UNPUBLISHNOTIFY      :String = "NetStream.Play.UnpublishNotify";
         public static const NETSTREAM_PUBLISH_BADNAME           :String = "NetStream.Publish.BadName";
         public static const NETSTREAM_PUBLISH_START             :String = "NetStream.Publish.Start";
         
