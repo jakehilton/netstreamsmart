@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.2
-DATE: 01/14/2014
+VERSION: 0.2.3
+DATE: 02/21/2014
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -62,7 +62,7 @@ package com.gearsandcogs.utils
 
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.1";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.3";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
@@ -283,6 +283,11 @@ package com.gearsandcogs.utils
                 setupTimeMonitor();
             else
                 killTimeMonitor();
+        }
+
+        public function get info_formatted():Object
+        {
+            return formatNetStreamInfo(info);
         }
 
         public function get ns_info_rate():uint
