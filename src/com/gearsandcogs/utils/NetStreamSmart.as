@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.4
+VERSION: 0.2.5
 DATE: 03/13/2014
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
@@ -64,7 +64,7 @@ package com.gearsandcogs.utils
 
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.4";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.5";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
@@ -100,6 +100,7 @@ package com.gearsandcogs.utils
         private var _debug                                      :Boolean;
         private var _disable_time_update                        :Boolean;
         private var _enable_info_update                         :Boolean;
+        private var _is_buffering                               :Boolean;
         private var _is_paused                                  :Boolean;
         private var _is_playing                                 :Boolean;
         private var _is_publishing                              :Boolean;
@@ -388,11 +389,16 @@ package com.gearsandcogs.utils
             bufferMonitorTimer.start();
         }
         
+        public function get is_buffering():Boolean
+        {
+            return _is_buffering;
+        }
+
         public function get is_paused():Boolean
         {
             return _is_paused;
         }
-        
+
         public function get is_playing():Boolean
         {
             return _is_playing;
@@ -420,6 +426,13 @@ package com.gearsandcogs.utils
             
             switch(e.info.code)
             {
+                case NETSTREAM_BUFFER_EMPTY:
+                    if(is_playing || is_publishing || is_paused)
+                        _is_buffering = true;
+                    break
+                case NETSTREAM_BUFFER_EMPTY:
+                    _is_buffering = false;
+                    break;
                 case NETSTREAM_PAUSE_NOTIFY:
                     _is_playing = false;
                     _is_paused = true;
@@ -430,10 +443,12 @@ package com.gearsandcogs.utils
                     break;
                 case NETSTREAM_PLAY_STOP:
                     _is_playing = false;
+                    _is_buffering = false;
                     break;
                 case NETSTREAM_PUBLISH_BADNAME:
                 case NETSTREAM_UNPUBLISH_SUCCESS:
                     _is_publishing = false;
+                    _is_buffering = false;
                     break;
                 case NETSTREAM_PUBLISH_START:
                     _is_publishing = true;
