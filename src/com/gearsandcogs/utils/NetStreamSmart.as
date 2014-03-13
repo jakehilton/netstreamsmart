@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.5
+VERSION: 0.2.6
 DATE: 03/13/2014
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
@@ -64,7 +64,7 @@ package com.gearsandcogs.utils
 
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.5";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.6";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
@@ -106,6 +106,7 @@ package com.gearsandcogs.utils
         private var _is_publishing                              :Boolean;
         private var _listener_initd                             :Boolean;
 
+        private var _nc                                         :NetConnection;
         private var _time                                       :Number = 0;
 
         private var _ext_client                                 :Object = {};
@@ -119,11 +120,12 @@ package com.gearsandcogs.utils
 
         public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
         {
+            _nc = connection;
             initVars();
             initListeners();
             super(connection, peerID);
         }
-        
+
         private function initVars():void
         {
             _closed = false;
@@ -260,18 +262,6 @@ package com.gearsandcogs.utils
         * Public methods
         */
 
-        override public function attachAudio(microphone:Microphone):void
-        {
-            audio_attached = microphone is Microphone;
-            super.attachAudio(microphone);
-        }
-
-        override public function attachCamera(theCamera:Camera, snapshotMilliseconds:int = -1):void
-        {
-            camera_attached = theCamera is Camera;
-            super.attachCamera(theCamera, snapshotMilliseconds);
-        }
-
         public function get enable_info_update():Boolean
         {
             return _enable_info_update;
@@ -323,43 +313,6 @@ package com.gearsandcogs.utils
             }
         }
 
-        override public function attach(nc:NetConnection):void
-        {
-            _closed = false;
-            super.attach(nc);
-        }
-        
-        override public function close():void
-        {
-            if(_debug)
-                log("close hit");
-            
-            killTimers();
-            initVars();
-            disconnectSources();
-            _closed = true;
-            dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
-            super.close();
-        }
-        
-        override public function play(...args):void
-        {
-            if(_debug)
-                log("play hit: "+args.join());
-            
-            super.play.apply(null,args);
-        }
-        
-        override public function set client(obj:Object):void
-        {
-            _ext_client = obj;
-            for(var i:String in obj)
-                if(!hasOwnProperty(i))
-                    this[i] = obj[i];
-
-            super.client = this;
-        }
-        
         public function get closed():Boolean
         {
             return _closed;
@@ -413,7 +366,12 @@ package com.gearsandcogs.utils
         {
             return _metaData;
         }
-        
+
+        public function get netconnection():NetConnection
+        {
+            return _nc;
+        }
+
         public function getTimeFormatted(separator:String = ":"):String
         {
             return TimeCalculator.getTimeOut(time,separator);
@@ -455,7 +413,61 @@ package com.gearsandcogs.utils
                     break;
             }
         }
-        
+
+        /*
+        Overrides
+         */
+
+        override public function attach(nc:NetConnection):void
+        {
+            _nc = nc;
+            _closed = false;
+            super.attach(nc);
+        }
+
+        override public function attachAudio(microphone:Microphone):void
+        {
+            audio_attached = microphone is Microphone;
+            super.attachAudio(microphone);
+        }
+
+        override public function attachCamera(theCamera:Camera, snapshotMilliseconds:int = -1):void
+        {
+            camera_attached = theCamera is Camera;
+            super.attachCamera(theCamera, snapshotMilliseconds);
+        }
+
+        override public function close():void
+        {
+            if(_debug)
+                log("close hit");
+
+            killTimers();
+            initVars();
+            disconnectSources();
+            _closed = true;
+            dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
+            super.close();
+        }
+
+        override public function play(...args):void
+        {
+            if(_debug)
+                log("play hit: "+args.join());
+
+            super.play.apply(null,args);
+        }
+
+        override public function set client(obj:Object):void
+        {
+            _ext_client = obj;
+            for(var i:String in obj)
+                if(!hasOwnProperty(i))
+                    this[i] = obj[i];
+
+            super.client = this;
+        }
+
         /*
         * Default methods to be supported for callbacks
         */
