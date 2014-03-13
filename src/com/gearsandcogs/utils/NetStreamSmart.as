@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.3
-DATE: 02/21/2014
+VERSION: 0.2.4
+DATE: 03/13/2014
 ACTIONSCRIPT VERSION: 3.0
 DESCRIPTION:
 An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -54,6 +54,8 @@ package com.gearsandcogs.utils
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
+    import flash.media.Camera;
+    import flash.media.Microphone;
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.NetStreamInfo;
@@ -62,7 +64,7 @@ package com.gearsandcogs.utils
 
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.3";
+        public static const VERSION                             :String = "NetStreamSmart v 0.2.4";
         
         public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
@@ -88,7 +90,9 @@ package com.gearsandcogs.utils
         public static const ONCUEPOINT                          :String = "NetStream.On.CuePoint";
         public static const ONMETADATA                          :String = "NetStream.On.MetaData";
         
+        public var camera_attached                              :Boolean;
         public var format_netstream_info                        :Boolean = true;
+        public var audio_attached                               :Boolean;
 
         public var buffer_empty_wait_limit                      :uint = 0;
 
@@ -254,6 +258,18 @@ package com.gearsandcogs.utils
         /*
         * Public methods
         */
+
+        override public function attachAudio(microphone:Microphone):void
+        {
+            audio_attached = microphone is Microphone;
+            super.attachAudio(microphone);
+        }
+
+        override public function attachCamera(theCamera:Camera, snapshotMilliseconds:int = -1):void
+        {
+            camera_attached = theCamera is Camera;
+            super.attachCamera(theCamera, snapshotMilliseconds);
+        }
 
         public function get enable_info_update():Boolean
         {
