@@ -1,53 +1,53 @@
 /*
-<AUTHOR: Jake Hilton, jake@gearsandcogs.com
-Copyright (C) 2014, Gears and Cogs.
+ <AUTHOR: Jake Hilton, jake@gearsandcogs.com
+ Copyright (C) 2014, Gears and Cogs.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION: 0.2.6
-DATE: 03/13/2014
-ACTIONSCRIPT VERSION: 3.0
-DESCRIPTION:
-An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
+ VERSION: 0.2.6
+ DATE: 03/13/2014
+ ACTIONSCRIPT VERSION: 3.0
+ DESCRIPTION:
+ An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
 
-Some version of the flash player incorrectly removed buffer notifications which would break applications that relied on this. This class will automate the buffer emptying and notification of the buffer empty.
+ Some version of the flash player incorrectly removed buffer notifications which would break applications that relied on this. This class will automate the buffer emptying and notification of the buffer empty.
 
-It will automatically detach any camera or microphone source from the netstream, allow it to empty, then report when it has emptied and close the netstream.
+ It will automatically detach any camera or microphone source from the netstream, allow it to empty, then report when it has emptied and close the netstream.
 
-It has an event,BUFFER_EMPTIED, that fires to notify the user of a buffer empty success.
+ It has an event,BUFFER_EMPTIED, that fires to notify the user of a buffer empty success.
 
-Public properties that can be set:
-buffer_empty_wait_limit: a uint property defining the number of seconds that the class will wait before firing off the buffer empty event. The default is 0 which means it will wait indefinitely for the netstream buffer to empty
-disable_time_update: by default a timer will be initialized to report back when the time value updates. The default is false and so the timer will start and report.
-enable_info_update: enable a timer will be initialized to report back netstream.info at a set interval. The default is false and so the timer will not start and report.
-ns_info_rate: the rate at which the info updates are reported out. The default is 2000 (2 seconds)
-format_netstream_info: it will format the netstream info into a JSON compatible dataset instead of the default netstream info object which doesn't support iterations
+ Public properties that can be set:
+ buffer_empty_wait_limit: a uint property defining the number of seconds that the class will wait before firing off the buffer empty event. The default is 0 which means it will wait indefinitely for the netstream buffer to empty
+ disable_time_update: by default a timer will be initialized to report back when the time value updates. The default is false and so the timer will start and report.
+ enable_info_update: enable a timer will be initialized to report back netstream.info at a set interval. The default is false and so the timer will not start and report.
+ ns_info_rate: the rate at which the info updates are reported out. The default is 2000 (2 seconds)
+ format_netstream_info: it will format the netstream info into a JSON compatible dataset instead of the default netstream info object which doesn't support iterations
 
-USAGE:
-It's a simple use case really.. just use it as you would the built in NetStream class. 
+ USAGE:
+ It's a simple use case really.. just use it as you would the built in NetStream class.
 
-To shutdown the netstream you would call the publishClose method to have it shutdown after a buffer empty or the finalizeClose to have it shutdown immediately and clean up the timer.
+ To shutdown the netstream you would call the publishClose method to have it shutdown after a buffer empty or the finalizeClose to have it shutdown immediately and clean up the timer.
 
-For example:
-var nc:NetConnection;
-var nss:NetStreamSmart = new NetStreamSmart(nc);
+ For example:
+ var nc:NetConnection;
+ var nss:NetStreamSmart = new NetStreamSmart(nc);
 
-//to close:
-nss.publishClose(); //will let the buffers empty to the server naturally then close
-nss.close(); //will immediately disconnect sources and close the netstream
+ //to close:
+ nss.publishClose(); //will let the buffers empty to the server naturally then close
+ nss.close(); //will immediately disconnect sources and close the netstream
 
-*/
+ */
 
 package com.gearsandcogs.utils
 {
@@ -64,61 +64,57 @@ package com.gearsandcogs.utils
 
     dynamic public class NetStreamSmart extends NetStream
     {
-        public static const VERSION                             :String = "NetStreamSmart v 0.2.6";
-        
-        public static const NETSTREAM_BUFFER_EMPTY              :String = "NetStream.Buffer.Empty";
-        public static const NETSTREAM_BUFFER_FULL               :String = "NetStream.Buffer.Full";
+        public static const NETSTREAM_BUFFER_EMPTY:String = "NetStream.Buffer.Empty";
+        public static const NETSTREAM_BUFFER_FULL:String = "NetStream.Buffer.Full";
+        public static const NETSTREAM_INFO_UPDATE:String = "NetStream.Info.Update";
+        public static const NETSTREAM_PAUSE_NOTIFY:String = "NetStream.Pause.Notify";
+        public static const NETSTREAM_PLAY_PUBLISHNOTIFY:String = "NetStream.Play.PublishNotify";
+        public static const NETSTREAM_PLAY_START:String = "NetStream.Play.Start";
+        public static const NETSTREAM_PLAY_STOP:String = "NetStream.Play.Stop";
+        public static const NETSTREAM_PLAY_STREAMNOTFOUND:String = "NetStream.Play.StreamNotFound";
+        public static const NETSTREAM_PLAY_UNPUBLISHNOTIFY:String = "NetStream.Play.UnpublishNotify";
+        public static const NETSTREAM_PUBLISH_BADNAME:String = "NetStream.Publish.BadName";
+        public static const NETSTREAM_PUBLISH_START:String = "NetStream.Publish.Start";
+        public static const NETSTREAM_RECORD_NOACCESS:String = "NetStream.Record.NoAccess";
+        public static const NETSTREAM_RECORD_START:String = "NetStream.Record.Start";
+        public static const NETSTREAM_RECORD_STOP:String = "NetStream.Record.Stop";
+        public static const NETSTREAM_SEEK_NOTIFY:String = "NetStream.Seek.Notify";
+        public static const NETSTREAM_TIME_UPDATE:String = "NetStream.Time.Update";
+        public static const NETSTREAM_UNPAUSE_NOTIFY:String = "NetStream.Unpause.Notify";
+        public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
+        public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
+        public static const ONMETADATA:String = "NetStream.On.MetaData";
+        public static const VERSION:String = "NetStreamSmart v 0.2.6";
 
-        public static const NETSTREAM_INFO_UPDATE               :String = "NetStream.Info.Update";
+        public var camera_attached:Boolean;
+        public var format_netstream_info:Boolean = true;
+        public var audio_attached:Boolean;
 
-        public static const NETSTREAM_PAUSE_NOTIFY              :String = "NetStream.Pause.Notify";
-        public static const NETSTREAM_PLAY_PUBLISHNOTIFY        :String = "NetStream.Play.PublishNotify";
-        public static const NETSTREAM_PLAY_START                :String = "NetStream.Play.Start";
-        public static const NETSTREAM_PLAY_STOP                 :String = "NetStream.Play.Stop";
-        public static const NETSTREAM_PLAY_STREAMNOTFOUND       :String = "NetStream.Play.StreamNotFound";
-        public static const NETSTREAM_PLAY_UNPUBLISHNOTIFY      :String = "NetStream.Play.UnpublishNotify";
-        public static const NETSTREAM_PUBLISH_BADNAME           :String = "NetStream.Publish.BadName";
-        public static const NETSTREAM_PUBLISH_START             :String = "NetStream.Publish.Start";
-        
-        public static const NETSTREAM_RECORD_START              :String = "NetStream.Record.Start";
-        public static const NETSTREAM_RECORD_STOP               :String = "NetStream.Record.Stop";
-        public static const NETSTREAM_SEEK_NOTIFY               :String = "NetStream.Seek.Notify";
-        public static const NETSTREAM_TIME_UPDATE               :String = "NetStream.Time.Update";
-        public static const NETSTREAM_UNPAUSE_NOTIFY            :String = "NetStream.Unpause.Notify";
-        public static const NETSTREAM_UNPUBLISH_SUCCESS         :String = "NetStream.Unpublish.Success";
+        public var buffer_empty_wait_limit:uint = 0;
 
-        public static const ONCUEPOINT                          :String = "NetStream.On.CuePoint";
-        public static const ONMETADATA                          :String = "NetStream.On.MetaData";
-        
-        public var camera_attached                              :Boolean;
-        public var format_netstream_info                        :Boolean = true;
-        public var audio_attached                               :Boolean;
+        private var _closed:Boolean;
+        private var _debug:Boolean;
+        private var _disable_time_update:Boolean;
+        private var _enable_info_update:Boolean;
+        private var _is_buffering:Boolean;
+        private var _is_paused:Boolean;
+        private var _is_playing:Boolean;
+        private var _is_publishing:Boolean;
+        private var _listener_initd:Boolean;
 
-        public var buffer_empty_wait_limit                      :uint = 0;
+        private var _nc:NetConnection;
+        private var _time:Number = 0;
 
-        private var _closed                                     :Boolean;
-        private var _debug                                      :Boolean;
-        private var _disable_time_update                        :Boolean;
-        private var _enable_info_update                         :Boolean;
-        private var _is_buffering                               :Boolean;
-        private var _is_paused                                  :Boolean;
-        private var _is_playing                                 :Boolean;
-        private var _is_publishing                              :Boolean;
-        private var _listener_initd                             :Boolean;
+        private var _ext_client:Object = {};
+        private var _metaData:Object = {};
 
-        private var _nc                                         :NetConnection;
-        private var _time                                       :Number = 0;
+        private var _bufferMonitorTimer:Timer;
+        private var _timeMonitorTimer:Timer;
+        private var _nsInfoTimer:Timer;
 
-        private var _ext_client                                 :Object = {};
-        private var _metaData                                   :Object = {};
+        private var _ns_info_rate:uint = 2000;
 
-        private var _bufferMonitorTimer                         :Timer;
-        private var _timeMonitorTimer                           :Timer;
-        private var _nsInfoTimer                                :Timer;
-
-        private var _ns_info_rate                                :uint = 2000;
-
-        public function NetStreamSmart(connection:NetConnection, peerID:String="connectToFMS")
+        public function NetStreamSmart(connection:NetConnection, peerID:String = "connectToFMS")
         {
             _nc = connection;
             initVars();
@@ -126,141 +122,15 @@ package com.gearsandcogs.utils
             super(connection, peerID);
         }
 
-        private function initVars():void
+        override public function set client(obj:Object):void
         {
-            _closed = false;
-            _listener_initd = false;
-            _is_paused = false;
-            _is_playing = false;
-            _is_publishing = false;
+            _ext_client = obj;
+            for (var i:String in obj)
+                if (!hasOwnProperty(i))
+                    this[i] = obj[i];
+
+            super.client = this;
         }
-        
-        private function get bufferMonitorTimer():Timer
-        {
-            if(!_bufferMonitorTimer)
-            {
-                _bufferMonitorTimer = new Timer(100,buffer_empty_wait_limit*10);
-                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER_COMPLETE,function(e:TimerEvent):void
-                {
-                    close();
-                });
-                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
-                {
-                    //to completely freeup the netstream in the case of another instance trying
-                    //to attach a camera or mic when it's in shutdown mode
-                    disconnectSources();
-                    try
-                    {
-                        if(info.audioBufferByteLength + info.videoBufferByteLength <= 0)
-                        {
-                            close();
-                        }
-                    }catch(e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
-                    {
-                        close();
-                    }
-                });
-            }
-            
-            return _bufferMonitorTimer;
-        }
-        
-        private function disconnectSources():void
-        {
-            attachAudio(null);
-            attachCamera(null);
-        }
-
-        private function killTimers():void
-        {
-            if(_bufferMonitorTimer)
-            {
-                _bufferMonitorTimer.stop();
-                _bufferMonitorTimer = null;
-            }
-
-            killInfoUpdater();
-            killTimeMonitor();
-        }
-
-        private function initListeners():void
-        {
-            if(_listener_initd)
-                return;
-            _listener_initd = true;
-
-            addEventListener(NetStatusEvent.NET_STATUS,handleNetstatus);
-
-            setupTimeMonitor();
-        }
-
-        private function setupInfoUpdater():void
-        {
-            if(_nsInfoTimer)
-                return;
-
-            _nsInfoTimer = new Timer(_ns_info_rate);
-            _nsInfoTimer.addEventListener(TimerEvent.TIMER, function(e:TimerEvent):void
-            {
-                dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE,false,false,format_netstream_info?formatNetStreamInfo(info):info));
-            });
-            _nsInfoTimer.start();
-        }
-
-        private function setupTimeMonitor():void
-        {
-            if(_timeMonitorTimer)
-                return;
-
-            _timeMonitorTimer = new Timer(100);
-            _timeMonitorTimer.addEventListener(TimerEvent.TIMER,function(e:TimerEvent):void
-            {
-                if(_time != time)
-                {
-                    _time = time;
-                    dispatchEvent(new ParamEvent(NETSTREAM_TIME_UPDATE,false,false,time));
-                }
-            });
-            _timeMonitorTimer.start();
-        }
-
-        private function killInfoUpdater():void
-        {
-            if(_nsInfoTimer)
-            {
-                _nsInfoTimer.stop();
-                _nsInfoTimer = null;
-            }
-        }
-
-        private function killTimeMonitor():void
-        {
-            if(_timeMonitorTimer)
-            {
-                _timeMonitorTimer.stop();
-                _timeMonitorTimer = null;
-            }
-        }
-
-        private static function formatNetStreamInfo(ns_info:NetStreamInfo):Object
-        {
-            var ns_info_new:Object = new Object();
-            var described_item:XML = describeType(ns_info);
-            var accessors:XMLList = described_item..accessor;
-            for each( var item:XML in accessors)
-                ns_info_new[item.@name.toString()] = ns_info[item.@name.toString()];
-
-            return ns_info_new;
-        }
-
-        private static function log(msg:String):void
-        {
-            trace("NetStreamSmart: "+msg);
-        }
-
-        /*
-        * Public methods
-        */
 
         public function get enable_info_update():Boolean
         {
@@ -271,7 +141,7 @@ package com.gearsandcogs.utils
         {
             _enable_info_update = b;
 
-            if(b)
+            if (b)
                 setupInfoUpdater();
             else
                 killInfoUpdater();
@@ -286,7 +156,7 @@ package com.gearsandcogs.utils
         {
             _disable_time_update = b;
 
-            if(b)
+            if (b)
                 setupTimeMonitor();
             else
                 killTimeMonitor();
@@ -306,7 +176,7 @@ package com.gearsandcogs.utils
         {
             _ns_info_rate = rate;
 
-            if(enable_info_update)
+            if (enable_info_update)
             {
                 killInfoUpdater();
                 setupInfoUpdater();
@@ -317,31 +187,27 @@ package com.gearsandcogs.utils
         {
             return _closed;
         }
-        
+
         public function get debug():Boolean
         {
             return _debug;
         }
-        
+
         public function set debug(isdebug:Boolean):void
         {
             _debug = isdebug;
             log(VERSION);
         }
-        
+
+        /*
+         * Public methods
+         */
+
         public function get duration():Number
         {
-            return metaData.duration?metaData.duration:0;
+            return metaData.duration ? metaData.duration : 0;
         }
-        
-        public function publishClose():void
-        {
-            if(_debug)
-                log("publishClose hit");
-            
-            bufferMonitorTimer.start();
-        }
-        
+
         public function get is_buffering():Boolean
         {
             return _is_buffering;
@@ -356,12 +222,12 @@ package com.gearsandcogs.utils
         {
             return _is_playing;
         }
-        
+
         public function get is_publishing():Boolean
         {
             return _is_publishing;
         }
-        
+
         public function get metaData():Object
         {
             return _metaData;
@@ -372,51 +238,52 @@ package com.gearsandcogs.utils
             return _nc;
         }
 
-        public function getTimeFormatted(separator:String = ":"):String
+        private function get bufferMonitorTimer():Timer
         {
-            return TimeCalculator.getTimeOut(time,separator);
-        }
-        
-        protected function handleNetstatus(e:NetStatusEvent):void
-        {
-            if(_debug)
-                log(e.info.code);
-            
-            switch(e.info.code)
+            if (!_bufferMonitorTimer)
             {
-                case NETSTREAM_BUFFER_EMPTY:
-                    if(is_playing || is_publishing || is_paused)
-                        _is_buffering = true;
-                    break
-                case NETSTREAM_BUFFER_EMPTY:
-                    _is_buffering = false;
-                    break;
-                case NETSTREAM_PAUSE_NOTIFY:
-                    _is_playing = false;
-                    _is_paused = true;
-                    break;
-                case NETSTREAM_PLAY_START:
-                    _is_playing = true;
-                    _is_paused = false;
-                    break;
-                case NETSTREAM_PLAY_STOP:
-                    _is_playing = false;
-                    _is_buffering = false;
-                    break;
-                case NETSTREAM_PUBLISH_BADNAME:
-                case NETSTREAM_UNPUBLISH_SUCCESS:
-                    _is_publishing = false;
-                    _is_buffering = false;
-                    break;
-                case NETSTREAM_PUBLISH_START:
-                    _is_publishing = true;
-                    break;
+                _bufferMonitorTimer = new Timer(100, buffer_empty_wait_limit * 10);
+                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER_COMPLETE, function (e:TimerEvent):void
+                {
+                    close();
+                });
+                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
+                {
+                    //to completely freeup the netstream in the case of another instance trying
+                    //to attach a camera or mic when it's in shutdown mode
+                    disconnectSources();
+                    try
+                    {
+                        if (info.audioBufferByteLength + info.videoBufferByteLength <= 0)
+                        {
+                            close();
+                        }
+                    }
+                    catch (e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
+                    {
+                        close();
+                    }
+                });
             }
+
+            return _bufferMonitorTimer;
         }
 
-        /*
-        Overrides
-         */
+        private static function formatNetStreamInfo(ns_info:NetStreamInfo):Object
+        {
+            var ns_info_new:Object = new Object();
+            var described_item:XML = describeType(ns_info);
+            var accessors:XMLList = described_item..accessor;
+            for each(var item:XML in accessors)
+                ns_info_new[item.@name.toString()] = ns_info[item.@name.toString()];
+
+            return ns_info_new;
+        }
+
+        private static function log(msg:String):void
+        {
+            trace("NetStreamSmart: " + msg);
+        }
 
         override public function attach(nc:NetConnection):void
         {
@@ -439,7 +306,7 @@ package com.gearsandcogs.utils
 
         override public function close():void
         {
-            if(_debug)
+            if (_debug)
                 log("close hit");
 
             killTimers();
@@ -452,43 +319,169 @@ package com.gearsandcogs.utils
 
         override public function play(...args):void
         {
-            if(_debug)
-                log("play hit: "+args.join());
+            if (_debug)
+                log("play hit: " + args.join());
 
-            super.play.apply(null,args);
+            super.play.apply(null, args);
         }
 
-        override public function set client(obj:Object):void
+        public function getTimeFormatted(separator:String = ":"):String
         {
-            _ext_client = obj;
-            for(var i:String in obj)
-                if(!hasOwnProperty(i))
-                    this[i] = obj[i];
-
-            super.client = this;
+            return TimeCalculator.getTimeOut(time, separator);
         }
 
-        /*
-        * Default methods to be supported for callbacks
-        */
-        
         public function onCuePoint(info:Object):void
         {
-            if(_ext_client["onCuePoint"])
+            if (_ext_client["onCuePoint"])
                 _ext_client["onCuePoint"](info);
-            
-            dispatchEvent(new ParamEvent(ONCUEPOINT,false,false,info));
+
+            dispatchEvent(new ParamEvent(ONCUEPOINT, false, false, info));
         }
-        
+
         public function onMetaData(info:Object):void
         {
             //used to allow the app to continue to work if a client.onMetaData isn't specified
             _metaData = info;
-            
-            if(_ext_client["onMetaData"])
+
+            if (_ext_client["onMetaData"])
                 _ext_client["onMetaData"](info);
-            
-            dispatchEvent(new ParamEvent(ONMETADATA,false,false,info));
+
+            dispatchEvent(new ParamEvent(ONMETADATA, false, false, info));
+        }
+
+        public function publishClose():void
+        {
+            if (_debug)
+                log("publishClose hit");
+
+            bufferMonitorTimer.start();
+        }
+
+        private function disconnectSources():void
+        {
+            attachAudio(null);
+            attachCamera(null);
+        }
+
+        /*
+         Overrides
+         */
+
+        private function initListeners():void
+        {
+            if (_listener_initd)
+                return;
+            _listener_initd = true;
+
+            addEventListener(NetStatusEvent.NET_STATUS, handleNetstatus);
+
+            setupTimeMonitor();
+        }
+
+        private function initVars():void
+        {
+            _closed = false;
+            _listener_initd = false;
+            _is_paused = false;
+            _is_playing = false;
+            _is_publishing = false;
+        }
+
+        private function killInfoUpdater():void
+        {
+            if (_nsInfoTimer)
+            {
+                _nsInfoTimer.stop();
+                _nsInfoTimer = null;
+            }
+        }
+
+        private function killTimeMonitor():void
+        {
+            if (_timeMonitorTimer)
+            {
+                _timeMonitorTimer.stop();
+                _timeMonitorTimer = null;
+            }
+        }
+
+        private function killTimers():void
+        {
+            if (_bufferMonitorTimer)
+            {
+                _bufferMonitorTimer.stop();
+                _bufferMonitorTimer = null;
+            }
+
+            killInfoUpdater();
+            killTimeMonitor();
+        }
+
+        private function setupInfoUpdater():void
+        {
+            if (_nsInfoTimer)
+                return;
+
+            _nsInfoTimer = new Timer(_ns_info_rate);
+            _nsInfoTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
+            {
+                dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE, false, false, format_netstream_info ? formatNetStreamInfo(info) : info));
+            });
+            _nsInfoTimer.start();
+        }
+
+        /*
+         * Default methods to be supported for callbacks
+         */
+
+        private function setupTimeMonitor():void
+        {
+            if (_timeMonitorTimer)
+                return;
+
+            _timeMonitorTimer = new Timer(100);
+            _timeMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
+            {
+                if (_time != time)
+                {
+                    _time = time;
+                    dispatchEvent(new ParamEvent(NETSTREAM_TIME_UPDATE, false, false, time));
+                }
+            });
+            _timeMonitorTimer.start();
+        }
+
+        protected function handleNetstatus(e:NetStatusEvent):void
+        {
+            if (_debug)
+                log(e.info.code);
+
+            switch (e.info.code)
+            {
+                case NETSTREAM_BUFFER_EMPTY:
+                    _is_buffering = is_playing || is_publishing || is_paused;
+                    break;
+                case NETSTREAM_PAUSE_NOTIFY:
+                    _is_playing = false;
+                    _is_paused = true;
+                    break;
+                case NETSTREAM_PLAY_START:
+                    _is_playing = true;
+                    _is_paused = false;
+                    break;
+                case NETSTREAM_PLAY_STOP:
+                    _is_playing = false;
+                    _is_buffering = false;
+                    break;
+                case NETSTREAM_PUBLISH_BADNAME:
+                case NETSTREAM_UNPUBLISH_SUCCESS:
+                    _is_publishing = false;
+                    _is_buffering = false;
+                    break;
+                case NETSTREAM_PUBLISH_START:
+                    _is_publishing = true;
+                    break;
+            }
         }
     }
 }
