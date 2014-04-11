@@ -28,6 +28,11 @@ var nc:NetConnection;
 var nss:NetStreamSmart = new NetStreamSmart(nc);
 
 //to close:
-nss.publishClose(); //will let the buffers empty to the server naturally then close
-nss.close(); //will immediately disconnect sources and close the netstream
+ nss.publishClose(); //will let the buffers empty to the server naturally then close the netstream
+ or
+ nss.publishDispose(); //will let the buffers empty to the server naturally then dispose of the netstream
+ or
+ nss.close(); //will immediately disconnect sources and close the netstream
+ or
+ nss.dispose(); //will immediately disconnect sources and dispose the netstream
 ```

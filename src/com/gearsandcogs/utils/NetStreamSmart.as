@@ -15,8 +15,8 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- VERSION: 0.2.6
- DATE: 03/13/2014
+ VERSION: 0.2.7
+ DATE: 04/11/2014
  ACTIONSCRIPT VERSION: 3.0
  DESCRIPTION:
  An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -44,8 +44,13 @@
  var nss:NetStreamSmart = new NetStreamSmart(nc);
 
  //to close:
- nss.publishClose(); //will let the buffers empty to the server naturally then close
+ nss.publishClose(); //will let the buffers empty to the server naturally then close the netstream
+ or
+ nss.publishDispose(); //will let the buffers empty to the server naturally then dispose of the netstream
+ or
  nss.close(); //will immediately disconnect sources and close the netstream
+ or
+ nss.dispose(); //will immediately disconnect sources and dispose the netstream
 
  */
 
@@ -68,6 +73,7 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_BUFFER_FULL:String = "NetStream.Buffer.Full";
         public static const NETSTREAM_INFO_UPDATE:String = "NetStream.Info.Update";
         public static const NETSTREAM_PAUSE_NOTIFY:String = "NetStream.Pause.Notify";
+        public static const NETSTREAM_PLAY_INSUFFICIENTBW:String = "NetStream.Play.InsufficientBW";
         public static const NETSTREAM_PLAY_PUBLISHNOTIFY:String = "NetStream.Play.PublishNotify";
         public static const NETSTREAM_PLAY_START:String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP:String = "NetStream.Play.Stop";
@@ -95,6 +101,7 @@ package com.gearsandcogs.utils
         private var _closed:Boolean;
         private var _debug:Boolean;
         private var _disable_time_update:Boolean;
+        private var _dispose:Boolean;
         private var _enable_info_update:Boolean;
         private var _is_buffering:Boolean;
         private var _is_paused:Boolean;
@@ -256,12 +263,18 @@ package com.gearsandcogs.utils
                     {
                         if (info.audioBufferByteLength + info.videoBufferByteLength <= 0)
                         {
-                            close();
+                            if (_dispose)
+                                dispose();
+                            else
+                                close();
                         }
                     }
                     catch (e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
                     {
-                        close();
+                        if (_dispose)
+                            dispose();
+                        else
+                            close();
                     }
                 });
             }
@@ -314,15 +327,28 @@ package com.gearsandcogs.utils
             disconnectSources();
             _closed = true;
             dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
-            super.close();
+
+            if (_dispose)
+                super.dispose();
+            else
+                super.close();
         }
 
-        override public function play(...args):void
+        override public function dispose():void
         {
             if (_debug)
-                log("play hit: " + args.join());
+                log("dispose hit");
 
-            super.play.apply(null, args);
+            _dispose = true;
+            close();
+        }
+
+        override public function play(...rest):void
+        {
+            if (_debug)
+                log("play hit: " + rest.join());
+
+            super.play.apply(null, rest);
         }
 
         public function getTimeFormatted(separator:String = ":"):String
@@ -354,6 +380,16 @@ package com.gearsandcogs.utils
             if (_debug)
                 log("publishClose hit");
 
+            _dispose = false;
+            bufferMonitorTimer.start();
+        }
+
+        public function publishDispose():void
+        {
+            if (_debug)
+                log("publishDispose hit");
+
+            _dispose = true;
             bufferMonitorTimer.start();
         }
 
