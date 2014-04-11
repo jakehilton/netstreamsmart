@@ -15,7 +15,7 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- VERSION: 0.2.7
+ VERSION: 0.3.0
  DATE: 04/11/2014
  ACTIONSCRIPT VERSION: 3.0
  DESCRIPTION:
@@ -90,7 +90,7 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 0.2.6";
+        public static const VERSION:String = "NetStreamSmart v 0.3.0";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
