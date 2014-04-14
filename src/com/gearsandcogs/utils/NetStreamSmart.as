@@ -15,8 +15,8 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- VERSION: 0.3.0
- DATE: 04/11/2014
+ VERSION: 0.3.1
+ DATE: 04/14/2014
  ACTIONSCRIPT VERSION: 3.0
  DESCRIPTION:
  An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -90,7 +90,7 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 0.3.0";
+        public static const VERSION:String = "NetStreamSmart v 0.3.1";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
@@ -348,12 +348,18 @@ package com.gearsandcogs.utils
             if (_debug)
                 log("play hit: " + rest.join());
 
+            if (!disable_time_update)
+                setupTimeMonitor();
+
+            if (enable_info_update)
+                setupInfoUpdater();
+
             super.play.apply(null, rest);
         }
 
-        public function getTimeFormatted(separator:String = ":"):String
+        public function getTimeFormatted(separator:String = ":", display_milliseconds:Boolean = false):String
         {
-            return TimeCalculator.getTimeOut(time, separator);
+            return TimeCalculator.getTimeOut(display_milliseconds ? time : uint(time), separator);
         }
 
         public function onCuePoint(info:Object):void
@@ -410,8 +416,6 @@ package com.gearsandcogs.utils
             _listener_initd = true;
 
             addEventListener(NetStatusEvent.NET_STATUS, handleNetstatus);
-
-            setupTimeMonitor();
         }
 
         private function initVars():void
@@ -465,10 +469,6 @@ package com.gearsandcogs.utils
             });
             _nsInfoTimer.start();
         }
-
-        /*
-         * Default methods to be supported for callbacks
-         */
 
         private function setupTimeMonitor():void
         {
