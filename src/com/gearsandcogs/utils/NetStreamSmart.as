@@ -90,7 +90,7 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 0.3.1";
+        public static const VERSION:String = "NetStreamSmart v 0.4.0";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
@@ -169,7 +169,20 @@ package com.gearsandcogs.utils
                 killTimeMonitor();
         }
 
-        public function get info_formatted():Object
+        public function get infoArray():Array
+        {
+            var returnData:Array = [];
+            var raw_info:Object = formatNetStreamInfo(info);
+
+            for (var i:String in raw_info)
+                returnData.push({name: i, value: raw_info[i]});
+
+            returnData.sortOn("name", [Array.CASEINSENSITIVE]);
+
+            return returnData;
+        }
+
+        public function get infoFormatted():Object
         {
             return formatNetStreamInfo(info);
         }
@@ -465,7 +478,8 @@ package com.gearsandcogs.utils
             _nsInfoTimer = new Timer(_ns_info_rate);
             _nsInfoTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
             {
-                dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE, false, false, format_netstream_info ? formatNetStreamInfo(info) : info));
+                if (info)
+                    dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE, false, false, format_netstream_info ? formatNetStreamInfo(info) : info));
             });
             _nsInfoTimer.start();
         }
