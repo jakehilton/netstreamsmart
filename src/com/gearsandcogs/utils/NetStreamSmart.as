@@ -70,16 +70,21 @@ package com.gearsandcogs.utils
     dynamic public class NetStreamSmart extends NetStream
     {
         public static const NETSTREAM_BUFFER_EMPTY:String = "NetStream.Buffer.Empty";
+        public static const NETSTREAM_BUFFER_FLUSH:String = "NetStream.Buffer.Flush";
         public static const NETSTREAM_BUFFER_FULL:String = "NetStream.Buffer.Full";
+        public static const NETSTREAM_FAILED:String = "NetStream.Failed";
         public static const NETSTREAM_INFO_UPDATE:String = "NetStream.Info.Update";
         public static const NETSTREAM_PAUSE_NOTIFY:String = "NetStream.Pause.Notify";
         public static const NETSTREAM_PLAY_INSUFFICIENTBW:String = "NetStream.Play.InsufficientBW";
         public static const NETSTREAM_PLAY_PUBLISHNOTIFY:String = "NetStream.Play.PublishNotify";
+        public static const NETSTREAM_PLAY_FAILED:String = "NetStream.Play.Failed";
+        public static const NETSTREAM_PLAY_RESET:String = "NetStream.Play.Reset";
         public static const NETSTREAM_PLAY_START:String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP:String = "NetStream.Play.Stop";
         public static const NETSTREAM_PLAY_STREAMNOTFOUND:String = "NetStream.Play.StreamNotFound";
         public static const NETSTREAM_PLAY_UNPUBLISHNOTIFY:String = "NetStream.Play.UnpublishNotify";
         public static const NETSTREAM_PUBLISH_BADNAME:String = "NetStream.Publish.BadName";
+        public static const NETSTREAM_PUBLISH_IDLE:String = "NetStream.Publish.Idle";
         public static const NETSTREAM_PUBLISH_START:String = "NetStream.Publish.Start";
         public static const NETSTREAM_RECORD_NOACCESS:String = "NetStream.Record.NoAccess";
         public static const NETSTREAM_RECORD_START:String = "NetStream.Record.Start";
@@ -88,9 +93,10 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_TIME_UPDATE:String = "NetStream.Time.Update";
         public static const NETSTREAM_UNPAUSE_NOTIFY:String = "NetStream.Unpause.Notify";
         public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
+        public static const NETSTREAM_VIDEO_DIMENTIONCHANGE:String = "NetStream.Video.DimensionChange";
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 1.0.0";
+        public static const VERSION:String = "NetStreamSmart v 1.0.1";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
@@ -356,6 +362,9 @@ package com.gearsandcogs.utils
             close();
         }
 
+        /**
+         * @see flash.net.NetStream.play
+         */
         override public function play(...rest):void
         {
             if (_debug)
