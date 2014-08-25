@@ -15,8 +15,8 @@
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- VERSION: 1.0.0
- DATE: 04/14/2014
+ VERSION: 1.1.0
+ DATE: 08/25/2014
  ACTIONSCRIPT VERSION: 3.0
  DESCRIPTION:
  An extension of the native netstream class that will better handle cache emptying and is backwards compatible with version of flash that had buffer monitoring issues.
@@ -75,9 +75,9 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_FAILED:String = "NetStream.Failed";
         public static const NETSTREAM_INFO_UPDATE:String = "NetStream.Info.Update";
         public static const NETSTREAM_PAUSE_NOTIFY:String = "NetStream.Pause.Notify";
+        public static const NETSTREAM_PLAY_FAILED:String = "NetStream.Play.Failed";
         public static const NETSTREAM_PLAY_INSUFFICIENTBW:String = "NetStream.Play.InsufficientBW";
         public static const NETSTREAM_PLAY_PUBLISHNOTIFY:String = "NetStream.Play.PublishNotify";
-        public static const NETSTREAM_PLAY_FAILED:String = "NetStream.Play.Failed";
         public static const NETSTREAM_PLAY_RESET:String = "NetStream.Play.Reset";
         public static const NETSTREAM_PLAY_START:String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP:String = "NetStream.Play.Stop";
@@ -96,7 +96,7 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_VIDEO_DIMENTIONCHANGE:String = "NetStream.Video.DimensionChange";
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 1.0.1";
+        public static const VERSION:String = "NetStreamSmart v 1.1.0";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
@@ -113,6 +113,7 @@ package com.gearsandcogs.utils
         private var _is_paused:Boolean;
         private var _is_playing:Boolean;
         private var _is_publishing:Boolean;
+        private var _is_recording:Boolean;
         private var _listener_initd:Boolean;
 
         private var _nc:NetConnection;
@@ -264,6 +265,16 @@ package com.gearsandcogs.utils
             return _nc;
         }
 
+        public function get is_recording():Boolean
+        {
+            return _is_recording;
+        }
+
+        public function set is_recording(value:Boolean):void
+        {
+            _is_recording = value;
+        }
+
         private function get bufferMonitorTimer():Timer
         {
             if (!_bufferMonitorTimer)
@@ -412,6 +423,10 @@ package com.gearsandcogs.utils
             bufferMonitorTimer.start();
         }
 
+        /*
+         Overrides
+         */
+
         public function publishDispose():void
         {
             if (_debug)
@@ -426,10 +441,6 @@ package com.gearsandcogs.utils
             attachAudio(null);
             attachCamera(null);
         }
-
-        /*
-         Overrides
-         */
 
         private function initListeners():void
         {
@@ -487,7 +498,7 @@ package com.gearsandcogs.utils
             _nsInfoTimer = new Timer(_ns_info_rate);
             _nsInfoTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
             {
-                if(!netconnection || !netconnection.connected)
+                if (!netconnection || !netconnection.connected)
                 {
                     killInfoUpdater();
                     return;
@@ -538,10 +549,17 @@ package com.gearsandcogs.utils
                     _is_playing = false;
                     _is_buffering = false;
                     break;
+                case NETSTREAM_RECORD_START:
+                    _is_recording = true;
+                    break;
+                case NETSTREAM_RECORD_STOP:
+                    _is_recording = false;
+                    break;
                 case NETSTREAM_PUBLISH_BADNAME:
                 case NETSTREAM_UNPUBLISH_SUCCESS:
-                    _is_publishing = false;
                     _is_buffering = false;
+                    _is_publishing = false;
+                    _is_recording = false;
                     break;
                 case NETSTREAM_PUBLISH_START:
                     _is_publishing = true;
