@@ -423,10 +423,6 @@ package com.gearsandcogs.utils
             bufferMonitorTimer.start();
         }
 
-        /*
-         Overrides
-         */
-
         public function publishDispose():void
         {
             if (_debug)
