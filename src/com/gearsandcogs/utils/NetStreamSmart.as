@@ -72,31 +72,48 @@ package com.gearsandcogs.utils
         public static const NETSTREAM_BUFFER_EMPTY:String = "NetStream.Buffer.Empty";
         public static const NETSTREAM_BUFFER_FLUSH:String = "NetStream.Buffer.Flush";
         public static const NETSTREAM_BUFFER_FULL:String = "NetStream.Buffer.Full";
+        public static const NETSTREAM_CONNECT_CLOSED:String = "NetStream.Connect.Closed";
+        public static const NETSTREAM_CONNECT_FAILED:String = "NetStream.Connect.Failed";
+        public static const NETSTREAM_CONNECT_REJECTED:String = "NetStream.Connect.Rejected";
+        public static const NETSTREAM_CONNECT_SUCCESS:String = "NetStream.Connect.Success";
+        public static const NETSTREAM_DRM_UPDATENEEDED:String = "NetStream.DRM.UpdateNeeded";
         public static const NETSTREAM_FAILED:String = "NetStream.Failed";
         public static const NETSTREAM_INFO_UPDATE:String = "NetStream.Info.Update";
+        public static const NETSTREAM_MULTICASTSTREAM_RESET:String = "NetStream.MulticastStream.Reset";
         public static const NETSTREAM_PAUSE_NOTIFY:String = "NetStream.Pause.Notify";
         public static const NETSTREAM_PLAY_FAILED:String = "NetStream.Play.Failed";
+        public static const NETSTREAM_PLAY_FILESTRUCTUREINVALID:String = "NetStream.Play.FileStructureInvalid";
         public static const NETSTREAM_PLAY_INSUFFICIENTBW:String = "NetStream.Play.InsufficientBW";
+        public static const NETSTREAM_PLAY_NOSUPPORTEDTRACKFOUND:String = "NetStream.Play.NoSupportedTrackFound";
         public static const NETSTREAM_PLAY_PUBLISHNOTIFY:String = "NetStream.Play.PublishNotify";
         public static const NETSTREAM_PLAY_RESET:String = "NetStream.Play.Reset";
         public static const NETSTREAM_PLAY_START:String = "NetStream.Play.Start";
         public static const NETSTREAM_PLAY_STOP:String = "NetStream.Play.Stop";
         public static const NETSTREAM_PLAY_STREAMNOTFOUND:String = "NetStream.Play.StreamNotFound";
+        public static const NETSTREAM_PLAY_TRANSITION:String = "NetStream.Play.Transition";
         public static const NETSTREAM_PLAY_UNPUBLISHNOTIFY:String = "NetStream.Play.UnpublishNotify";
         public static const NETSTREAM_PUBLISH_BADNAME:String = "NetStream.Publish.BadName";
         public static const NETSTREAM_PUBLISH_IDLE:String = "NetStream.Publish.Idle";
         public static const NETSTREAM_PUBLISH_START:String = "NetStream.Publish.Start";
+        public static const NETSTREAM_RECORD_ALREADYEXISTS:String = "NetStream.Record.AlreadyExists";
+        public static const NETSTREAM_RECORD_FAILED:String = "NetStream.Record.Failed";
         public static const NETSTREAM_RECORD_NOACCESS:String = "NetStream.Record.NoAccess";
         public static const NETSTREAM_RECORD_START:String = "NetStream.Record.Start";
         public static const NETSTREAM_RECORD_STOP:String = "NetStream.Record.Stop";
+        public static const NETSTREAM_SECONDSCREEN_START:String = "NetStream.SecondScreen.Start";
+        public static const NETSTREAM_SECONDSCREEN_STOP:String = "NetStream.SecondScreen.Stop";
+        public static const NETSTREAM_SEEK_FAILED:String = "NetStream.Seek.Failed";
+        public static const NETSTREAM_SEEK_INVALIDTIME:String = "NetStream.Seek.InvalidTime";
         public static const NETSTREAM_SEEK_NOTIFY:String = "NetStream.Seek.Notify";
+        public static const NETSTREAM_STEP_NOTIFY:String = "NetStream.Step.Notify";
         public static const NETSTREAM_TIME_UPDATE:String = "NetStream.Time.Update";
         public static const NETSTREAM_UNPAUSE_NOTIFY:String = "NetStream.Unpause.Notify";
         public static const NETSTREAM_UNPUBLISH_SUCCESS:String = "NetStream.Unpublish.Success";
         public static const NETSTREAM_VIDEO_DIMENTIONCHANGE:String = "NetStream.Video.DimensionChange";
+
         public static const ONCUEPOINT:String = "NetStream.On.CuePoint";
         public static const ONMETADATA:String = "NetStream.On.MetaData";
-        public static const VERSION:String = "NetStreamSmart v 1.1.0";
+        public static const VERSION:String = "NetStreamSmart v 1.1.1";
 
         public var camera_attached:Boolean;
         public var format_netstream_info:Boolean = true;
@@ -128,60 +145,53 @@ package com.gearsandcogs.utils
 
         private var _ns_info_rate:uint = 2000;
 
-        public function NetStreamSmart(connection:NetConnection, peerID:String = "connectToFMS")
-        {
+        public function NetStreamSmart(connection:NetConnection, peerID:String = "connectToFMS") {
             _nc = connection;
             initVars();
             initListeners();
             super(connection, peerID);
         }
 
-        override public function set client(obj:Object):void
-        {
+        override public function set client(obj:Object):void {
             _ext_client = obj;
-            for (var i:String in obj)
-                if (!hasOwnProperty(i))
+            for(var i:String in obj)
+                if(!hasOwnProperty(i))
                     this[i] = obj[i];
 
             super.client = this;
         }
 
-        public function get enable_info_update():Boolean
-        {
+        public function get enable_info_update():Boolean {
             return _enable_info_update;
         }
 
-        public function set enable_info_update(b:Boolean):void
-        {
+        public function set enable_info_update(b:Boolean):void {
             _enable_info_update = b;
 
-            if (b)
+            if(b)
                 setupInfoUpdater();
             else
                 killInfoUpdater();
         }
 
-        public function get disable_time_update():Boolean
-        {
+        public function get disable_time_update():Boolean {
             return _disable_time_update;
         }
 
-        public function set disable_time_update(b:Boolean):void
-        {
+        public function set disable_time_update(b:Boolean):void {
             _disable_time_update = b;
 
-            if (b)
+            if(b)
                 setupTimeMonitor();
             else
                 killTimeMonitor();
         }
 
-        public function get infoArray():Array
-        {
+        public function get infoArray():Array {
             var returnData:Array = [];
             var raw_info:Object = formatNetStreamInfo(info);
 
-            for (var i:String in raw_info)
+            for(var i:String in raw_info)
                 returnData.push({name: i, value: raw_info[i]});
 
             returnData.sortOn("name", [Array.CASEINSENSITIVE]);
@@ -189,39 +199,32 @@ package com.gearsandcogs.utils
             return returnData;
         }
 
-        public function get infoFormatted():Object
-        {
+        public function get infoFormatted():Object {
             return formatNetStreamInfo(info);
         }
 
-        public function get ns_info_rate():uint
-        {
+        public function get ns_info_rate():uint {
             return _ns_info_rate;
         }
 
-        public function set ns_info_rate(rate:uint):void
-        {
+        public function set ns_info_rate(rate:uint):void {
             _ns_info_rate = rate;
 
-            if (enable_info_update)
-            {
+            if(enable_info_update) {
                 killInfoUpdater();
                 setupInfoUpdater();
             }
         }
 
-        public function get closed():Boolean
-        {
+        public function get closed():Boolean {
             return _closed;
         }
 
-        public function get debug():Boolean
-        {
+        public function get debug():Boolean {
             return _debug;
         }
 
-        public function set debug(isdebug:Boolean):void
-        {
+        public function set debug(isdebug:Boolean):void {
             _debug = isdebug;
             log(VERSION);
         }
@@ -230,78 +233,63 @@ package com.gearsandcogs.utils
          * Public methods
          */
 
-        public function get duration():Number
-        {
+        public function get duration():Number {
             return metaData.duration ? metaData.duration : 0;
         }
 
-        public function get is_buffering():Boolean
-        {
+        public function get is_buffering():Boolean {
             return _is_buffering;
         }
 
-        public function get is_paused():Boolean
-        {
+        public function get is_paused():Boolean {
             return _is_paused;
         }
 
-        public function get is_playing():Boolean
-        {
+        public function get is_playing():Boolean {
             return _is_playing;
         }
 
-        public function get is_publishing():Boolean
-        {
+        public function get is_publishing():Boolean {
             return _is_publishing;
         }
 
-        public function get metaData():Object
-        {
+        public function get metaData():Object {
             return _metaData;
         }
 
-        public function get netconnection():NetConnection
-        {
+        public function get netconnection():NetConnection {
             return _nc;
         }
 
-        public function get is_recording():Boolean
-        {
+        public function get is_recording():Boolean {
             return _is_recording;
         }
 
-        public function set is_recording(value:Boolean):void
-        {
+        public function set is_recording(value:Boolean):void {
             _is_recording = value;
         }
 
-        private function get bufferMonitorTimer():Timer
-        {
-            if (!_bufferMonitorTimer)
-            {
+        private function get bufferMonitorTimer():Timer {
+            if(!_bufferMonitorTimer) {
                 _bufferMonitorTimer = new Timer(100, buffer_empty_wait_limit * 10);
-                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER_COMPLETE, function (e:TimerEvent):void
-                {
+                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER_COMPLETE, function (e:TimerEvent):void {
                     close();
                 });
-                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
-                {
+                _bufferMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void {
                     //to completely freeup the netstream in the case of another instance trying
                     //to attach a camera or mic when it's in shutdown mode
                     disconnectSources();
-                    try
-                    {
-                        if (info.audioBufferByteLength + info.videoBufferByteLength <= 0)
-                        {
-                            if (_dispose)
+                    try {
+                        if(info.audioBufferByteLength + info.videoBufferByteLength <= 0) {
+                            if(_dispose)
                                 dispose();
                             else
                                 close();
                         }
                     }
-                    catch (e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
+                    catch(e:Error) //netconnection was shutdown incorrectly leaving this improperly instantiated
                     {
-                        if (_dispose)
+                        if(_dispose)
                             dispose();
                         else
                             close();
@@ -312,8 +300,7 @@ package com.gearsandcogs.utils
             return _bufferMonitorTimer;
         }
 
-        private static function formatNetStreamInfo(ns_info:NetStreamInfo):Object
-        {
+        private static function formatNetStreamInfo(ns_info:NetStreamInfo):Object {
             var ns_info_new:Object = new Object();
             var described_item:XML = describeType(ns_info);
             var accessors:XMLList = described_item..accessor;
@@ -323,33 +310,28 @@ package com.gearsandcogs.utils
             return ns_info_new;
         }
 
-        private static function log(msg:String):void
-        {
+        private static function log(msg:String):void {
             trace("NetStreamSmart: " + msg);
         }
 
-        override public function attach(nc:NetConnection):void
-        {
+        override public function attach(nc:NetConnection):void {
             _nc = nc;
             _closed = false;
             super.attach(nc);
         }
 
-        override public function attachAudio(microphone:Microphone):void
-        {
+        override public function attachAudio(microphone:Microphone):void {
             audio_attached = microphone is Microphone;
             super.attachAudio(microphone);
         }
 
-        override public function attachCamera(theCamera:Camera, snapshotMilliseconds:int = -1):void
-        {
+        override public function attachCamera(theCamera:Camera, snapshotMilliseconds:int = -1):void {
             camera_attached = theCamera is Camera;
             super.attachCamera(theCamera, snapshotMilliseconds);
         }
 
-        override public function close():void
-        {
-            if (_debug)
+        override public function close():void {
+            if(_debug)
                 log("close hit");
 
             killTimers();
@@ -358,15 +340,14 @@ package com.gearsandcogs.utils
             _closed = true;
             dispatchEvent(new Event(NETSTREAM_BUFFER_EMPTY));
 
-            if (_dispose)
+            if(_dispose)
                 super.dispose();
             else
                 super.close();
         }
 
-        override public function dispose():void
-        {
-            if (_debug)
+        override public function dispose():void {
+            if(_debug)
                 log("dispose hit");
 
             _dispose = true;
@@ -376,79 +357,70 @@ package com.gearsandcogs.utils
         /**
          * @see flash.net.NetStream.play
          */
-        override public function play(...rest):void
-        {
-            if (_debug)
+        override public function play(...rest):void {
+            if(_debug)
                 log("play hit: " + rest.join());
 
-            if (!disable_time_update)
+            if(!disable_time_update)
                 setupTimeMonitor();
 
-            if (enable_info_update)
+            if(enable_info_update)
                 setupInfoUpdater();
 
             super.play.apply(null, rest);
         }
 
-        public function getTimeFormatted(separator:String = ":", display_milliseconds:Boolean = false):String
-        {
+        public function getTimeFormatted(separator:String = ":", display_milliseconds:Boolean = false):String {
             return TimeCalculator.getTimeOut(display_milliseconds ? time : uint(time), separator);
         }
 
-        public function onCuePoint(info:Object):void
-        {
-            if (_ext_client["onCuePoint"])
+        public function onCuePoint(info:Object):void {
+            if(_ext_client["onCuePoint"])
                 _ext_client["onCuePoint"](info);
 
             dispatchEvent(new ParamEvent(ONCUEPOINT, false, false, info));
         }
 
-        public function onMetaData(info:Object):void
-        {
+        public function onMetaData(info:Object):void {
             //used to allow the app to continue to work if a client.onMetaData isn't specified
             _metaData = info;
 
-            if (_ext_client["onMetaData"])
+            if(_ext_client["onMetaData"])
                 _ext_client["onMetaData"](info);
 
             dispatchEvent(new ParamEvent(ONMETADATA, false, false, info));
         }
 
-        public function publishClose():void
-        {
-            if (_debug)
+        public function publishClose():void {
+            if(_debug)
                 log("publishClose hit");
 
             _dispose = false;
             bufferMonitorTimer.start();
         }
 
-        public function publishDispose():void
-        {
-            if (_debug)
+        public function publishDispose():void {
+            if(_debug)
                 log("publishDispose hit");
 
             _dispose = true;
             bufferMonitorTimer.start();
         }
 
-        private function disconnectSources():void
-        {
+        private function disconnectSources():void {
             attachAudio(null);
             attachCamera(null);
         }
 
-        private function initListeners():void
-        {
-            if (_listener_initd)
+        private function initListeners():void {
+            if(_listener_initd)
                 return;
             _listener_initd = true;
 
             addEventListener(NetStatusEvent.NET_STATUS, handleNetstatus);
         }
 
-        private function initVars():void
-        {
+        private function initVars():void {
             _closed = false;
             _listener_initd = false;
             _is_paused = false;
@@ -456,28 +428,22 @@ package com.gearsandcogs.utils
             _is_publishing = false;
         }
 
-        private function killInfoUpdater():void
-        {
-            if (_nsInfoTimer)
-            {
+        private function killInfoUpdater():void {
+            if(_nsInfoTimer) {
                 _nsInfoTimer.stop();
                 _nsInfoTimer = null;
             }
         }
 
-        private function killTimeMonitor():void
-        {
-            if (_timeMonitorTimer)
-            {
+        private function killTimeMonitor():void {
+            if(_timeMonitorTimer) {
                 _timeMonitorTimer.stop();
                 _timeMonitorTimer = null;
             }
         }
 
-        private function killTimers():void
-        {
-            if (_bufferMonitorTimer)
-            {
+        private function killTimers():void {
+            if(_bufferMonitorTimer) {
                 _bufferMonitorTimer.stop();
                 _bufferMonitorTimer = null;
             }
@@ -486,36 +452,30 @@ package com.gearsandcogs.utils
             killTimeMonitor();
         }
 
-        private function setupInfoUpdater():void
-        {
-            if (_nsInfoTimer)
+        private function setupInfoUpdater():void {
+            if(_nsInfoTimer)
                 return;
 
             _nsInfoTimer = new Timer(_ns_info_rate);
-            _nsInfoTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
-            {
-                if (!netconnection || !netconnection.connected)
-                {
+            _nsInfoTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void {
+                if(!netconnection || !netconnection.connected) {
                     killInfoUpdater();
                     return;
                 }
 
-                if (info)
+                if(info)
                     dispatchEvent(new ParamEvent(NETSTREAM_INFO_UPDATE, false, false, format_netstream_info ? formatNetStreamInfo(info) : info));
             });
             _nsInfoTimer.start();
         }
 
-        private function setupTimeMonitor():void
-        {
-            if (_timeMonitorTimer)
+        private function setupTimeMonitor():void {
+            if(_timeMonitorTimer)
                 return;
 
             _timeMonitorTimer = new Timer(100);
-            _timeMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void
-            {
-                if (_time != time)
-                {
+            _timeMonitorTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void {
+                if(_time != time) {
                     _time = time;
                     dispatchEvent(new ParamEvent(NETSTREAM_TIME_UPDATE, false, false, time));
                 }
@@ -523,13 +483,11 @@ package com.gearsandcogs.utils
             _timeMonitorTimer.start();
         }
 
-        protected function handleNetstatus(e:NetStatusEvent):void
-        {
-            if (_debug)
+        protected function handleNetstatus(e:NetStatusEvent):void {
+            if(_debug)
                 log(e.info.code);
 
-            switch (e.info.code)
-            {
+            switch(e.info.code) {
                 case NETSTREAM_BUFFER_EMPTY:
                     _is_buffering = is_playing || is_publishing || is_paused;
                     break;
